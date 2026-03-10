@@ -1,99 +1,156 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 
 export const LoginScreen = () => {
-  // Состояния для хранения того, что вводит пользователь
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+
+  const [isPhoneFocused, setIsPhoneFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Вход</Text>
-        <Text style={styles.subtitle}>Добро пожаловать в PickMe!</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        <Image 
+          source={require('../assets/images/login_header.png')} 
+          style={styles.headerImage} 
+          resizeMode="cover"
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Пароль"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={true} // Скрывает пароль звездочками
-        />
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Вход</Text>
+          
+          <Text style={styles.requiredText}>Обязательные поля отмечены *</Text>
 
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Войти</Text>
-        </TouchableOpacity>
+          <Text style={styles.label}>Номер телефона *</Text>
+          <TextInput
+            style={[styles.input, isPhoneFocused && styles.inputFocused]}
+            placeholder="Введите номер телефона"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            placeholderTextColor="#A9A9A9"
+            onFocus={() => setIsPhoneFocused(true)} 
+            onBlur={() => setIsPhoneFocused(false)} 
+          />
 
-        <TouchableOpacity style={styles.linkButton}>
-          <Text style={styles.linkText}>Нет аккаунта? Зарегистрироваться</Text>
-        </TouchableOpacity>
-      </View>
+          <Text style={styles.label}>Пароль *</Text>
+          <View style={[styles.passwordContainer, isPasswordFocused && styles.inputFocused]}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Введите пароль"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={true}
+              placeholderTextColor="#A9A9A9"
+              onFocus={() => setIsPasswordFocused(true)}
+              onBlur={() => setIsPasswordFocused(false)}
+            />
+            <View style={styles.iconWrapper}>
+              <Image 
+                source={require('../assets/images/key.png')} 
+                style={styles.iconImage} 
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.loginButton}>
+            <Text style={styles.loginButtonText}>Войти</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.forgotButton}>
+            <Text style={styles.forgotButtonText}>Забыли пароль?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.registerContainer}>
+            <Text style={styles.registerText}>
+              Нет аккаунта? <Text style={styles.registerLink}>Зарегистрироваться</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#F5F5F5' 
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  scrollContent: { flexGrow: 1, paddingBottom: 30 },
+  headerImage: { width: '100%', height: 240 },
+  formContainer: { paddingHorizontal: 20, paddingTop: 20 },
+  title: { fontSize: 32, fontWeight: 'bold', color: '#000', textAlign: 'center', marginBottom: 20 },
+  requiredText: { fontSize: 14, color: '#666', marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: 'bold', color: '#000', marginBottom: 8, marginLeft: 5 },
+  
+
+  input: {
+    backgroundColor: '#EAEAEA',
+    borderRadius: 30,
+    paddingHorizontal: 15,
+    height: 55,
+    marginBottom: 20,
+    fontSize: 16,
+    color: '#000', 
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
-  formContainer: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    padding: 20 
+  
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EAEAEA',
+    borderRadius: 30,
+    paddingHorizontal: 15,
+    height: 55,
+    marginBottom: 30,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
-  title: { 
-    fontSize: 32, 
-    fontWeight: 'bold', 
-    color: '#333333', 
-    marginBottom: 10, 
-    textAlign: 'center' 
+  
+  inputFocused: {
+    borderColor: '#007AFF',
+    backgroundColor: '#F8F8F8',
   },
-  subtitle: { 
-    fontSize: 16, 
-    color: '#666666', 
-    marginBottom: 30, 
-    textAlign: 'center' 
+
+  passwordInput: { flex: 1, fontSize: 16, color: '#000' },
+  
+  iconWrapper: { 
+    width: 30,
+    alignItems: 'flex-end',
+    justifyContent: 'center' 
   },
-  input: { 
-    backgroundColor: '#FFFFFF', 
-    padding: 15, 
-    borderRadius: 10, 
-    marginBottom: 15, 
-    borderWidth: 1, 
-    borderColor: '#DDDDDD', 
-    fontSize: 16 
+  
+  iconImage: { 
+    width: 15, 
+    height: 15, 
+    resizeMode: 'contain',
+    tintColor: '#999'
   },
-  button: { 
-    backgroundColor: '#007AFF', 
-    padding: 15, 
-    borderRadius: 10, 
-    alignItems: 'center', 
-    marginTop: 10 
+  
+  loginButton: {
+    backgroundColor: '#C6DBF0',
+    borderRadius: 15,
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
   },
-  buttonText: { 
-    color: '#FFFFFF', 
-    fontSize: 16, 
-    fontWeight: 'bold' 
+  loginButtonText: { color: '#555', fontSize: 18, fontWeight: '500' },
+  forgotButton: {
+    backgroundColor: '#EAEAEA',
+    borderRadius: 15,
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
   },
-  linkButton: { 
-    marginTop: 20, 
-    alignItems: 'center' 
-  },
-  linkText: { 
-    color: '#007AFF', 
-    fontSize: 14 
-  }
+  forgotButtonText: { color: '#555', fontSize: 18},
+  registerContainer: { alignItems: 'center' },
+  registerText: { fontSize: 14, color: '#333' },
+  registerLink: { fontWeight: 'bold', textDecorationLine: 'underline' },
 });

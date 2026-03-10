@@ -14,8 +14,31 @@ interface RegisterDriverData {
   vehicleSeats: number;
 }
 
+interface RegisterPassengerData {
+  email: string;
+  password: string;
+  fullName: string;
+  phoneNumber: string;
+}
+
 export async function registerDriver(data: RegisterDriverData) {
   const response = await fetch(`${API_BASE_URL}/driver/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.error || 'Registration failed');
+  }
+
+  return json;
+}
+
+export async function registerPassenger(data: RegisterPassengerData) {
+  const response = await fetch(`${API_BASE_URL}/passenger/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

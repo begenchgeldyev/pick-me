@@ -19,7 +19,7 @@ export const users = pgTable("users", {
   avatarUrl: varchar("avatar_url", { length: 500 }),
   rating: real("rating").default(0).notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
-  role: varchar("role", { length: 20 }).notNull(), // 'passenger' | 'driver'
+  role: varchar("role", { length: 20 }).notNull().default("passenger"), // 'passenger' | 'driver'
   licenseNumber: varchar("license_number", { length: 50 }), // driver only
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

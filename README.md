@@ -26,6 +26,6 @@ npm run ios
 ## Полезные команды
 
 ```bash
-npm run lint
-npm test
+npm run lint #показать логи
+npm test 
 ```

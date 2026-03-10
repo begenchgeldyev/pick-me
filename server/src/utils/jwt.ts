@@ -1,4 +1,4 @@
-import { sign, verify, decode } from "hono/jwt";
+import { sign, verify } from "hono/jwt";
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET!;
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;

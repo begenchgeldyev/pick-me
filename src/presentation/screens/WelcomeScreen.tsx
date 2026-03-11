@@ -19,7 +19,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onRegister, onLogin }) =>
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" transparent backgroundColor="transparent" />
       <Image 
-        source={require('../assets/images/login_header.png')} 
+        source={require('../../assets/images/login_header.png')} 
         style={styles.headerImage} 
         resizeMode="cover"
       />

@@ -21,7 +21,7 @@ export const SuccessRegistrationScreen: React.FC<SuccessRegistrationScreenProps>
       <View style={styles.content}>
         <View style={styles.imageHeaderContainer}>
           <Image
-            source={require('../assets/images/registration_header.png')}
+            source={require('../../assets/images/registration_header.png')}
             style={styles.headerImage}
             resizeMode="cover"
           />

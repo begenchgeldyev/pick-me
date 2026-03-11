@@ -7,17 +7,24 @@ export class RegisterDriverUseCase {
   constructor(private authRepository: IAuthRepository) {}
 
   async execute(params: RegisterDriverParams): Promise<Result<User, AppError>> {
-    // Бизнес-валидация
-    if (!params.fullName || params.fullName.trim().split(' ').length < 2) {
-      return failure(new AppError('ValidationError', 'Введите имя и фамилию'));
-    }
+    // 1. Проверка ФИО (только буквы, минимум 2 слова)
+    const nameRegex = /^[а-яА-ЯёЁa-zA-Z\s-]+$/;
+    const words = params.fullName.trim().split(/\s+/);
     
-    if (!params.licenseNumber || params.licenseNumber.length < 6) {
-      return failure(new AppError('ValidationError', 'Некорректный номер ВУ'));
+    if (!nameRegex.test(params.fullName)) {
+      return failure(new AppError('ValidationError', 'ФИО может содержать только буквы'));
+    }
+    if (words.length < 2) {
+      return failure(new AppError('ValidationError', 'Введите фамилию и имя полностью'));
+    }
+    if (words.some(word => word.length < 2)) {
+      return failure(new AppError('ValidationError', 'Каждое слово в ФИО должно быть длиннее одной буквы'));
     }
 
-    if (params.vehicleYear < 1990 || params.vehicleYear > new Date().getFullYear()) {
-      return failure(new AppError('ValidationError', 'Некорректный год выпуска авто'));
+    // 2. Проверка Email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(params.email)) {
+      return failure(new AppError('ValidationError', 'Введите корректный Email'));
     }
 
     return this.authRepository.registerDriver(params);

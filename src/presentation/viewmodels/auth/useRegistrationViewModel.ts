@@ -65,6 +65,11 @@ export const useRegistrationViewModel = (registerUseCase: RegisterDriverUseCase)
     }
 
     // 3. Валидация паролей
+    if (formData.password.length < 8) {
+      setError('Пароль должен быть не короче 8 символов!');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Пароли не совпадают!');
       return;

@@ -39,7 +39,6 @@ const RegistrationScreen: React.FC<RegistrationScreenProps> = ({
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const shouldShowError = (field: keyof typeof formData) => {
-    // Подсвечиваем красным, если есть общая ошибка и это поле пустое
     return error === 'Заполните обязательные поля!' && !formData[field].trim();
   };
 
@@ -63,7 +62,6 @@ const RegistrationScreen: React.FC<RegistrationScreenProps> = ({
           placeholder={placeholder}
           value={value}
           onChangeText={(text) => {
-            // Для email убираем пробелы
             const processedText = field === 'email' ? text.trim() : text;
             updateField(field, processedText);
           }}
@@ -83,9 +81,23 @@ const RegistrationScreen: React.FC<RegistrationScreenProps> = ({
     </View>
   );
 
-  const Checkbox = ({ checked, onPress, label }: { checked: boolean, onPress: () => void, label: string }) => (
+  const Checkbox = ({ 
+    checked, 
+    onPress, 
+    label, 
+    hasError 
+  }: { 
+    checked: boolean, 
+    onPress: () => void, 
+    label: string,
+    hasError?: boolean
+  }) => (
     <TouchableOpacity style={styles.checkboxContainer} onPress={onPress} activeOpacity={0.7}>
-      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+      <View style={[
+        styles.checkbox, 
+        checked && styles.checkboxChecked,
+        hasError && styles.checkboxError
+      ]}>
         {checked && <Text style={styles.checkboxIcon}>✓</Text>}
       </View>
       <Text style={styles.checkboxLabel}>{label}</Text>
@@ -164,6 +176,7 @@ const RegistrationScreen: React.FC<RegistrationScreenProps> = ({
                 checked={confirmedOwnership} 
                 onPress={() => setConfirmedOwnership(!confirmedOwnership)}
                 label="Я подтверждаю, что являюсь владельцем указанной машины и машина не находится в розыске"
+                hasError={!!error && !confirmedOwnership}
               />
             </View>
           )}
@@ -172,9 +185,9 @@ const RegistrationScreen: React.FC<RegistrationScreenProps> = ({
             checked={agreedToTerms} 
             onPress={() => setAgreedToTerms(!agreedToTerms)}
             label="Согласен с условиями пользования"
+            hasError={!!error && !agreedToTerms}
           />
 
-          {/* Ошибка теперь НАД кнопкой */}
           {error && <Text style={styles.globalErrorText}>{error}</Text>}
 
           <TouchableOpacity 
@@ -273,14 +286,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   checkboxChecked: { backgroundColor: '#333' },
+  checkboxError: { backgroundColor: '#FFD6D6', borderColor: '#FF0000' },
   checkboxIcon: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
   checkboxLabel: { flex: 1, fontSize: 13, color: '#000', lineHeight: 18 },
   
   globalErrorText: { 
     color: 'red', 
     textAlign: 'center', 
-    marginBottom: 10, // Отступ снизу до кнопки
-    marginTop: 15,    // Отступ сверху от чекбоксов
+    marginBottom: 10, 
+    marginTop: 15, 
     fontWeight: 'bold', 
     fontSize: 14 
   },
@@ -290,7 +304,7 @@ const styles = StyleSheet.create({
     height: 55,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10, // Уменьшен отступ, так как сверху теперь может быть ошибка
+    marginTop: 10,
   },
   buttonDisabled: { backgroundColor: '#DDD' },
   submitButtonText: { color: '#5E7A90', fontSize: 18, fontWeight: 'bold' },

@@ -9,9 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
-
-type Role = 'passenger' | 'driver';
+import { useLoginViewModel, Role } from '../viewmodels/auth/useLoginViewModel';
 
 const ROLES = [
   { label: 'Пассажир', value: 'passenger' },
@@ -21,46 +21,29 @@ const ROLES = [
 interface LoginScreenProps {
   onRegister: () => void;
   onBack: () => void;
+  viewModel: ReturnType<typeof useLoginViewModel>;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onRegister, onBack }) => {
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<Role>('passenger');
-  const [showRolePicker, setShowRolePicker] = useState(false);
+export const LoginScreen: React.FC<LoginScreenProps> = ({ 
+  onRegister, 
+  onBack, 
+  viewModel 
+}) => {
+  const {
+    phone, setPhone,
+    password, setPassword,
+    role, setRole,
+    isLoading,
+    error,
+    showRolePicker, setShowRolePicker,
+    handleLogin,
+  } = viewModel;
 
   const [isPhoneFocused, setIsPhoneFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
-  const [phoneError, setPhoneError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  // --- ЛОГИКА ПРОВЕРКИ ---
-  const handleLogin = () => {
-    // 1. Сбрасываем старые ошибки перед новой проверкой
-    setPhoneError(false);
-    setPasswordError(false);
-    setErrorMessage('');
-
-    // 2. Сценарий 1: Заполнены не все данные
-    if (!phone || !password) {
-      if (!phone) setPhoneError(true);
-      if (!password) setPasswordError(true);
-      setErrorMessage('Заполните обязательные поля!');
-      return; // Останавливаем код, дальше не идем
-    }
-
-    // 3. Сценарий 2: Некорректный пароль
-    if (password !== '12345') {
-      setPhoneError(true); 
-      setPasswordError(true);
-      setErrorMessage('Неверный номер телефона или\nпароль!');
-      return;
-    }
-
-    alert('Успешный вход!');
-  };
+  // Для подсветки ошибок из ViewModel (упрощенная реализация)
+  const hasError = !!error;
 
   return (
     <KeyboardAvoidingView
@@ -71,7 +54,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onRegister, onBack }) 
         
         <View style={styles.imageHeaderContainer}>
           <Image 
-            source={require('../assets/images/login_header.png')} 
+            source={require('../../assets/images/login_header.png')} 
             style={styles.headerImage} 
             resizeMode="cover"
           />
@@ -88,6 +71,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onRegister, onBack }) 
           <Text style={styles.title}>Вход</Text>
           
           <Text style={styles.requiredText}>Обязательные поля отмечены *</Text>
+
+          {error && <Text style={styles.errorText}>{error}</Text>}
 
           <Text style={styles.label}>Роль в системе *</Text>
           <TouchableOpacity
@@ -127,7 +112,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onRegister, onBack }) 
             style={[
               styles.input, 
               isPhoneFocused && styles.inputFocused,
-              phoneError && styles.inputError
+              hasError && !phone && styles.inputError
             ]}
             placeholder="89134567890"
             value={phone}
@@ -142,7 +127,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onRegister, onBack }) 
           <View style={[
             styles.passwordContainer, 
             isPasswordFocused && styles.inputFocused,
-            passwordError && styles.inputError
+            hasError && !password && styles.inputError
           ]}>
             <TextInput
               style={styles.passwordInput}
@@ -156,18 +141,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onRegister, onBack }) 
             />
             <View style={styles.iconWrapper}>
               <Image 
-                source={require('../assets/images/key.png')} 
+                source={require('../../assets/images/key.png')} 
                 style={styles.iconImage} 
               />
             </View>
           </View>
 
-          {errorMessage ? (
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          ) : null}
-
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-            <Text style={styles.loginButtonText}>Войти</Text>
+          <TouchableOpacity 
+            style={[styles.loginButton, isLoading && styles.buttonDisabled]} 
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.loginButtonText}>Войти</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.forgotButton}>
@@ -212,14 +201,14 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: 'bold',
     textAlign: 'center',
-    transform: [{ translateY: -6 }], // Еще большее смещение вверх
+    transform: [{ translateY: -6 }],
     marginLeft: -2,
   },
   formContainer: { paddingHorizontal: 20, paddingTop: 20 },
   title: { fontSize: 32, fontWeight: 'bold', color: '#000', textAlign: 'center', marginBottom: 20 },
   requiredText: { fontSize: 12, color: '#666', marginBottom: 20 },
   label: { fontSize: 14, fontWeight: 'bold', color: '#000', marginBottom: 8, marginLeft: 5 },
-  
+  errorText: { color: 'red', textAlign: 'center', marginBottom: 10, fontWeight: 'bold' },
   input: {
     backgroundColor: '#EAEAEA',
     borderRadius: 30,
@@ -232,30 +221,25 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     justifyContent: 'center',
   },
-
   roleInput: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-
   inputActive: {
     borderColor: '#007AFF',
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     marginBottom: 0,
   },
-
   roleText: {
     fontSize: 16,
     color: '#000',
   },
-
   dropdownIcon: {
     fontSize: 12,
     color: '#666',
   },
-
   dropdownContainer: {
     backgroundColor: '#F0F0F0',
     borderBottomLeftRadius: 20,
@@ -266,24 +250,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     overflow: 'hidden',
   },
-
   dropdownOption: {
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderTopWidth: 1,
     borderTopColor: '#DDD',
   },
-
   dropdownOptionText: {
     fontSize: 16,
     color: '#333',
   },
-
   dropdownOptionTextActive: {
     color: '#007AFF',
     fontWeight: 'bold',
   },
-  
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -295,29 +275,26 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
-  
   inputFocused: {
     borderColor: '#007AFF',
     backgroundColor: '#F8F8F8',
   },
-
   inputError: {
     backgroundColor: '#FFD6D6',
+    borderColor: '#FF0000',
   },
-
   passwordInput: { flex: 1, fontSize: 16, color: '#000' },
-  
-  iconWrapper: { width: 30, alignItems: 'flex-end', justifyContent: 'center' },
-  iconImage: { width: 22, height: 22, resizeMode: 'contain', tintColor: '#000' },
-  
-  errorText: {
-    color: '#D80000',
-    fontSize: 13,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 15, 
+  iconWrapper: { 
+    width: 30,
+    alignItems: 'flex-end',
+    justifyContent: 'center' 
   },
-
+  iconImage: { 
+    width: 20, 
+    height: 20, 
+    resizeMode: 'contain',
+    tintColor: '#000'
+  },
   loginButton: {
     backgroundColor: '#C6DBF0',
     borderRadius: 30,
@@ -325,6 +302,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
+  },
+  buttonDisabled: {
+    backgroundColor: '#DDD',
   },
   loginButtonText: { color: '#555', fontSize: 18, fontWeight: '500' },
   forgotButton: {

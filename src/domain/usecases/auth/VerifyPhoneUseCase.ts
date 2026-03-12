@@ -7,7 +7,7 @@ export class VerifyPhoneUseCase {
 
   async execute(code: string): Promise<Result<boolean, AppError>> {
     if (code.length < 4) {
-      return failure(new AppError('ValidationError', 'Код должен содержать 4 цифры'));
+      return failure(new AppError('ValidationError', 'Введите код!'));
     }
     return this.authRepository.verifyPhone(code);
   }

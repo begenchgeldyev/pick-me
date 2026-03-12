@@ -15,7 +15,7 @@ export const useVerificationViewModel = (verifyUseCase: VerifyPhoneUseCase) => {
     if (result.success && result.data) {
       onSuccess();
     } else {
-      setError(result.success ? 'Неверный код' : result.error.message);
+      setError('Введите код!');
     }
 
     setIsLoading(false);

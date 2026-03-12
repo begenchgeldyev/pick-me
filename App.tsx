@@ -10,7 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import WelcomeScreen from './src/presentation/screens/WelcomeScreen';
 import OnboardingScreen from './src/presentation/screens/OnboardingScreen';
 import { LoginScreen } from './src/presentation/screens/LoginScreen';
-import DriverRegistrationScreen from './src/presentation/screens/DriverRegistrationScreen';
+import RegistrationScreen from './src/presentation/screens/DriverRegistrationScreen'; // Теперь это общий экран регистрации
 import { VerificationScreen } from './src/presentation/screens/VerificationScreen';
 import { SuccessRegistrationScreen } from './src/presentation/screens/SuccessRegistrationScreen';
 
@@ -20,7 +20,7 @@ import { LoginUseCase } from './src/domain/usecases/auth/LoginUseCase';
 import { RegisterDriverUseCase } from './src/domain/usecases/auth/RegisterDriverUseCase';
 import { VerifyPhoneUseCase } from './src/domain/usecases/auth/VerifyPhoneUseCase';
 import { useLoginViewModel } from './src/presentation/viewmodels/auth/useLoginViewModel';
-import { useDriverRegistrationViewModel } from './src/presentation/viewmodels/auth/useDriverRegistrationViewModel';
+import { useRegistrationViewModel } from './src/presentation/viewmodels/auth/useRegistrationViewModel';
 import { useVerificationViewModel } from './src/presentation/viewmodels/auth/useVerificationViewModel';
 
 type AppScreen = 'welcome' | 'onboarding' | 'login' | 'register' | 'verification' | 'success_registration';
@@ -39,7 +39,7 @@ function App() {
   
   // 3. Инициализация ViewModels
   const loginViewModel = useLoginViewModel(loginUseCase);
-  const registerDriverViewModel = useDriverRegistrationViewModel(registerDriverUseCase);
+  const registrationViewModel = useRegistrationViewModel(registerDriverUseCase);
   const verificationViewModel = useVerificationViewModel(verifyPhoneUseCase);
 
   const renderScreen = () => {
@@ -69,8 +69,8 @@ function App() {
         );
       case 'register':
         return (
-          <DriverRegistrationScreen 
-            viewModel={registerDriverViewModel}
+          <RegistrationScreen 
+            viewModel={registrationViewModel}
             onBack={() => setCurrentScreen('onboarding')} 
             onSuccess={(phone) => {
               setPhoneNumber(phone);

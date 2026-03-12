@@ -11,28 +11,36 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import { useDriverRegistrationViewModel } from '../viewmodels/auth/useDriverRegistrationViewModel';
+import { useRegistrationViewModel, Role } from '../viewmodels/auth/useRegistrationViewModel';
 
-interface DriverRegistrationScreenProps {
+interface RegistrationScreenProps {
   onBack: () => void;
   onSuccess: (phone: string) => void;
-  viewModel: ReturnType<typeof useDriverRegistrationViewModel>;
+  viewModel: ReturnType<typeof useRegistrationViewModel>;
 }
 
-const DriverRegistrationScreen: React.FC<DriverRegistrationScreenProps> = ({ 
+const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ 
   onBack, 
   onSuccess, 
   viewModel 
 }) => {
   const {
+    role, setRole,
+    showRolePicker, setShowRolePicker,
     formData,
     updateField,
+    agreedToTerms, setAgreedToTerms,
+    confirmedOwnership, setConfirmedOwnership,
     isLoading,
     error,
     handleRegister,
   } = viewModel;
 
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const shouldShowError = (field: keyof typeof formData) => {
+    return error === 'Заполните обязательные поля!' && !formData[field].trim();
+  };
 
   const renderInput = (
     label: string, 
@@ -44,18 +52,56 @@ const DriverRegistrationScreen: React.FC<DriverRegistrationScreenProps> = ({
   ) => (
     <View style={styles.inputWrapper}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[styles.input, focusedField === field && styles.inputFocused]}
-        placeholder={placeholder}
-        value={value}
-        onChangeText={(text) => updateField(field, text)}
-        keyboardType={keyboardType}
-        secureTextEntry={secure}
-        placeholderTextColor="#A9A9A9"
-        onFocus={() => setFocusedField(field)}
-        onBlur={() => setFocusedField(null)}
-      />
+      <View style={[
+        styles.inputContainer,
+        focusedField === field && styles.inputFocused,
+        shouldShowError(field) && styles.inputError
+      ]}>
+        <TextInput
+          style={styles.input}
+          placeholder={placeholder}
+          value={value}
+          onChangeText={(text) => {
+            const processedText = field === 'email' ? text.trim() : text;
+            updateField(field, processedText);
+          }}
+          keyboardType={keyboardType}
+          secureTextEntry={secure}
+          placeholderTextColor="#A9A9A9"
+          onFocus={() => setFocusedField(field)}
+          onBlur={() => setFocusedField(null)}
+        />
+        {secure && (
+          <Image 
+            source={require('../../assets/images/key.png')} 
+            style={styles.keyIcon} 
+          />
+        )}
+      </View>
     </View>
+  );
+
+  const Checkbox = ({ 
+    checked, 
+    onPress, 
+    label, 
+    hasError 
+  }: { 
+    checked: boolean, 
+    onPress: () => void, 
+    label: string,
+    hasError?: boolean
+  }) => (
+    <TouchableOpacity style={styles.checkboxContainer} onPress={onPress} activeOpacity={0.7}>
+      <View style={[
+        styles.checkbox, 
+        checked && styles.checkboxChecked,
+        hasError && styles.checkboxError
+      ]}>
+        {checked && <Text style={styles.checkboxIcon}>✓</Text>}
+      </View>
+      <Text style={styles.checkboxLabel}>{label}</Text>
+    </TouchableOpacity>
   );
 
   return (
@@ -77,25 +123,72 @@ const DriverRegistrationScreen: React.FC<DriverRegistrationScreenProps> = ({
 
         <View style={styles.formContainer}>
           <Text style={styles.title}>Регистрация</Text>
-          <Text style={styles.subtitle}>водитель</Text>
           
           <Text style={styles.requiredText}>Обязательные поля отмечены *</Text>
-          {error && <Text style={styles.errorText}>{error}</Text>}
 
-          <Text style={styles.sectionTitle}>Личные данные</Text>
-          {renderInput('ФИО *', formData.fullName, 'fullName', 'Иван Иванов')}
-          {renderInput('Email *', formData.email, 'email', 'example@mail.ru', 'email-address')}
-          {renderInput('Номер телефона *', formData.phone, 'phone', '89990000000', 'phone-pad')}
-          {renderInput('Пароль *', formData.password, 'password', '••••••••', 'default', true)}
-          {renderInput('Номер ВУ *', formData.licenseNumber, 'licenseNumber', '77 12 345678')}
+          {renderInput('Фамилия Имя Отчество *', formData.fullName, 'fullName', '')}
+          {renderInput('Email *', formData.email, 'email', '', 'email-address')}
+          {renderInput('Номер телефона *', formData.phone, 'phone', '', 'phone-pad')}
+          {renderInput('Пароль *', formData.password, 'password', '', 'default', true)}
+          {renderInput('Пароль еще раз *', formData.confirmPassword, 'confirmPassword', '', 'default', true)}
 
-          <Text style={styles.sectionTitle}>Данные автомобиля</Text>
-          {renderInput('Гос. номер *', formData.vehicleNumber, 'vehicleNumber', 'А 123 БВ 77')}
-          {renderInput('Марка *', formData.vehicleMake, 'vehicleMake', 'Toyota')}
-          {renderInput('Модель *', formData.vehicleModel, 'vehicleModel', 'Camry')}
-          {renderInput('Цвет *', formData.vehicleColor, 'vehicleColor', 'Белый')}
-          {renderInput('Год выпуска *', formData.vehicleYear, 'vehicleYear', '2020', 'numeric')}
-          {renderInput('Количество мест *', formData.vehicleSeats, 'vehicleSeats', '4', 'numeric')}
+          <View style={styles.inputWrapper}>
+            <Text style={styles.label}>Роль в системе *</Text>
+            <TouchableOpacity
+              style={[styles.roleSelector, showRolePicker && styles.inputFocused]}
+              onPress={() => setShowRolePicker(!showRolePicker)}
+            >
+              <Text style={styles.roleText}>{role === 'passenger' ? 'Пассажир' : 'Водитель'}</Text>
+              <Text style={styles.dropdownIcon}>↓</Text>
+            </TouchableOpacity>
+
+            {showRolePicker && (
+              <View style={styles.dropdown}>
+                {(['passenger', 'driver'] as Role[]).map((r) => (
+                  <TouchableOpacity
+                    key={r}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setRole(r);
+                      setShowRolePicker(false);
+                    }}
+                  >
+                    <Text style={[styles.roleText, role === r && styles.roleTextActive]}>
+                      {r === 'passenger' ? 'Пассажир' : 'Водитель'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {role === 'driver' && (
+            <View style={styles.driverSection}>
+              <Text style={styles.sectionTitle}>Данные машины</Text>
+              {renderInput('Номер *', formData.vehicleNumber, 'vehicleNumber', '')}
+              {renderInput('Марка *', formData.vehicleMake, 'vehicleMake', '')}
+              {renderInput('Модель *', formData.vehicleModel, 'vehicleModel', '')}
+              {renderInput('Цвет как в документах*', formData.vehicleColor, 'vehicleColor', '')}
+              {renderInput('Год выпуска *', formData.vehicleYear, 'vehicleYear', '', 'numeric')}
+              {renderInput('Количество мест *', formData.vehicleSeats, 'vehicleSeats', '', 'numeric')}
+              
+              <Checkbox 
+                checked={confirmedOwnership} 
+                onPress={() => setConfirmedOwnership(!confirmedOwnership)}
+                label="Я подтверждаю, что являюсь владельцем указанной машины и машина не находится в розыске"
+                hasError={!!error && !confirmedOwnership}
+              />
+            </View>
+          )}
+
+          <Checkbox 
+            checked={agreedToTerms} 
+            onPress={() => setAgreedToTerms(!agreedToTerms)}
+            label="Согласен с условиями пользования"
+            hasError={!!error && !agreedToTerms}
+          />
+
+          {error && <Text style={styles.globalErrorText}>{error}</Text>}
 
           <TouchableOpacity 
             style={[styles.submitButton, isLoading && styles.buttonDisabled]} 
@@ -103,7 +196,7 @@ const DriverRegistrationScreen: React.FC<DriverRegistrationScreenProps> = ({
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator color="#FFF" />
+              <ActivityIndicator color="#555" />
             ) : (
               <Text style={styles.submitButtonText}>Зарегистрироваться</Text>
             )}
@@ -118,7 +211,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
   scrollContent: { flexGrow: 1, paddingBottom: 40 },
   headerContainer: { position: 'relative' },
-  headerImage: { width: '100%', height: 200 },
+  headerImage: { width: '100%', height: 220 },
   backButton: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 50 : 20,
@@ -129,37 +222,92 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
-  backButtonText: { fontSize: 30, color: '#000', fontWeight: 'bold' },
-  formContainer: { paddingHorizontal: 20, paddingTop: 20 },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#000', textAlign: 'center' },
-  subtitle: { fontSize: 18, color: '#666', textAlign: 'center', marginBottom: 20, marginTop: -5 },
-  requiredText: { fontSize: 14, color: '#666', marginBottom: 20, textAlign: 'center' },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#000', marginTop: 10, marginBottom: 15 },
-  inputWrapper: { marginBottom: 15 },
-  label: { fontSize: 14, fontWeight: 'bold', color: '#000', marginBottom: 8, marginLeft: 5 },
-  input: {
+  backButtonText: { fontSize: 30, color: '#000', fontWeight: 'bold', transform: [{ translateY: -3 }] },
+  formContainer: { paddingHorizontal: 25, paddingTop: 20 },
+  title: { fontSize: 40, fontWeight: 'bold', color: '#000', textAlign: 'center', marginBottom: 30 },
+  requiredText: { fontSize: 14, color: '#999', marginBottom: 25, fontWeight: '500' },
+  inputWrapper: { marginBottom: 20 },
+  label: { fontSize: 14, fontWeight: 'bold', color: '#000', marginBottom: 10, marginLeft: 5 },
+  inputContainer: {
     backgroundColor: '#EAEAEA',
-    borderRadius: 15,
-    paddingHorizontal: 15,
-    height: 50,
-    fontSize: 16,
-    color: '#000',
+    borderRadius: 30,
+    paddingHorizontal: 20,
+    height: 55,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
+  input: { flex: 1, fontSize: 16, color: '#000', height: '100%' },
   inputFocused: { borderColor: '#007AFF', backgroundColor: '#F8F8F8' },
-  errorText: { color: 'red', textAlign: 'center', marginBottom: 15 },
+  inputError: { backgroundColor: '#FFD6D6', borderColor: '#FF0000' },
+  keyIcon: { width: 18, height: 18, tintColor: '#000', resizeMode: 'contain' },
+  
+  roleSelector: {
+    backgroundColor: '#EAEAEA',
+    borderRadius: 30,
+    paddingHorizontal: 20,
+    height: 55,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  roleText: { fontSize: 16, color: '#666' },
+  roleTextActive: { color: '#007AFF', fontWeight: 'bold' },
+  dropdownIcon: { fontSize: 18, color: '#000' },
+  dropdown: {
+    backgroundColor: '#F0F0F0',
+    borderRadius: 15,
+    marginTop: 5,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#DDD',
+  },
+  dropdownItem: { paddingVertical: 15, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#DDD' },
+  
+  driverSection: { marginTop: 20 },
+  sectionTitle: { fontSize: 24, fontWeight: 'bold', color: '#000', textAlign: 'center', marginBottom: 25 },
+  
+  checkboxContainer: { flexDirection: 'row', alignItems: 'flex-start', marginVertical: 10, paddingHorizontal: 5 },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#333',
+    backgroundColor: '#FFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  checkboxChecked: { backgroundColor: '#333' },
+  checkboxError: { backgroundColor: '#FFD6D6', borderColor: '#FF0000' },
+  checkboxIcon: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
+  checkboxLabel: { flex: 1, fontSize: 13, color: '#000', lineHeight: 18 },
+  
+  globalErrorText: { 
+    color: 'red', 
+    textAlign: 'center', 
+    marginBottom: 10, 
+    marginTop: 15, 
+    fontWeight: 'bold', 
+    fontSize: 14 
+  },
   submitButton: {
-    backgroundColor: '#C6DBF0',
+    backgroundColor: '#D1E3FF',
     borderRadius: 15,
     height: 55,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
   },
   buttonDisabled: { backgroundColor: '#DDD' },
-  submitButtonText: { color: '#555', fontSize: 18, fontWeight: 'bold' },
+  submitButtonText: { color: '#5E7A90', fontSize: 18, fontWeight: 'bold' },
 });
 
-export default DriverRegistrationScreen;
+export default RegistrationScreen;

@@ -50,7 +50,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onFinish, onSkip, o
           <View style={styles.stepContent}>
             <View style={styles.imageCircle}>
               <Image 
-                source={require('../assets/images/lightning_mcqueen.png')} 
+                source={require('../../assets/images/lightning_mcqueen.png')} 
                 style={styles.mcqueenImage}
                 resizeMode="contain"
               />

@@ -38,6 +38,19 @@ export class AuthRepositoryImpl implements IAuthRepository {
     });
   }
 
+  async registerDriver(params: any): Promise<Result<User, AppError>> {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return success({
+      id: '3',
+      name: params.fullName,
+      phone: params.phone,
+      email: params.email,
+      rating: 5.0,
+      isVerified: false,
+      createdAt: new Date(),
+    });
+  }
+
   async verifyPhone(code: string): Promise<Result<boolean, AppError>> {
     return success(code === '1111');
   }

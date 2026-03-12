@@ -3,7 +3,7 @@ import { LoginUseCase } from '../../../domain/usecases/auth/LoginUseCase';
 
 export type Role = 'passenger' | 'driver';
 
-export const useLoginViewModel = (loginUseCase: LoginUseCase) => {
+export const useLoginViewModel = (loginUseCase: LoginUseCase, onSuccess?: () => void) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('passenger');
@@ -22,8 +22,7 @@ export const useLoginViewModel = (loginUseCase: LoginUseCase) => {
     });
 
     if (result.success) {
-      console.log('Успешный вход:', result.data.user.name);
-      // Здесь можно вызвать навигацию дальше
+      onSuccess?.();
     } else {
       setError(result.error.message);
     }

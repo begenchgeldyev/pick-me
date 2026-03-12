@@ -3,8 +3,11 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { StatusBar, StyleSheet, View, Alert } from 'react-native';
+import { StatusBar, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import YaMap from 'react-native-yamap';
+
+YaMap.init('bccd5891-767c-424d-bab2-c7c4d379521a');
 
 // UI
 import WelcomeScreen from './src/presentation/screens/WelcomeScreen';
@@ -13,6 +16,10 @@ import { LoginScreen } from './src/presentation/screens/LoginScreen';
 import RegistrationScreen from './src/presentation/screens/DriverRegistrationScreen'; // Теперь это общий экран регистрации
 import { VerificationScreen } from './src/presentation/screens/VerificationScreen';
 import { SuccessRegistrationScreen } from './src/presentation/screens/SuccessRegistrationScreen';
+import SearchScreen, { SearchParams } from './src/presentation/screens/SearchScreen';
+import SearchResultsScreen from './src/presentation/screens/SearchResultsScreen';
+import TripMapScreen from './src/presentation/screens/TripMapScreen';
+import { Order } from './src/data/mock/mockOrders';
 
 // Architecture Layers
 import { AuthRepositoryImpl } from './src/data/repositories/AuthRepositoryImpl';
@@ -23,11 +30,14 @@ import { useLoginViewModel } from './src/presentation/viewmodels/auth/useLoginVi
 import { useRegistrationViewModel } from './src/presentation/viewmodels/auth/useRegistrationViewModel';
 import { useVerificationViewModel } from './src/presentation/viewmodels/auth/useVerificationViewModel';
 
-type AppScreen = 'welcome' | 'onboarding' | 'login' | 'register' | 'verification' | 'success_registration';
+type AppScreen = 'welcome' | 'onboarding' | 'login' | 'register' | 'verification' | 'success_registration' | 'search' | 'search_results' | 'trip_map';
+
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('welcome');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [searchParams, setSearchParams] = useState<SearchParams>({ from: '', to: '', date: '', passengers: '' });
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // 1. Инициализация репозитория
   const authRepository = useMemo(() => new AuthRepositoryImpl(), []);
@@ -38,7 +48,7 @@ function App() {
   const verifyPhoneUseCase = useMemo(() => new VerifyPhoneUseCase(authRepository), [authRepository]);
   
   // 3. Инициализация ViewModels
-  const loginViewModel = useLoginViewModel(loginUseCase);
+  const loginViewModel = useLoginViewModel(loginUseCase, () => setCurrentScreen('search'));
   const registrationViewModel = useRegistrationViewModel(registerDriverUseCase);
   const verificationViewModel = useVerificationViewModel(verifyPhoneUseCase);
 
@@ -90,12 +100,36 @@ function App() {
       case 'success_registration':
         return (
           <SuccessRegistrationScreen
-            onFinish={() => {
-              Alert.alert('Остальное пока в разработке...');
-              setCurrentScreen('welcome');
+            onFinish={() => setCurrentScreen('search')}
+          />
+        );
+      case 'search':
+        return (
+          <SearchScreen
+            onSearch={(params) => {
+              setSearchParams(params);
+              setCurrentScreen('search_results');
             }}
           />
         );
+      case 'search_results':
+        return (
+          <SearchResultsScreen
+            searchParams={searchParams}
+            onBack={() => setCurrentScreen('search')}
+            onSelectOrder={(order: Order) => {
+              setSelectedOrder(order);
+              setCurrentScreen('trip_map');
+            }}
+          />
+        );
+      case 'trip_map':
+        return selectedOrder ? (
+          <TripMapScreen
+            order={selectedOrder}
+            onBack={() => setCurrentScreen('search_results')}
+          />
+        ) : null;
       default:
         return <WelcomeScreen onRegister={() => setCurrentScreen('onboarding')} onLogin={() => setCurrentScreen('login')} />;
     }
